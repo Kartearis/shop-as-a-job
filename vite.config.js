@@ -14,9 +14,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'Shop as a Job',
-        short_name: 'ShopJob',
-        description: 'Offline-first shopping list PWA',
+        name: 'Кафе — заказы и аналитика',
+        short_name: 'Кафе',
+        description: 'Offline-first cafe order, stock and analytics app',
         theme_color: '#1e293b',
         background_color: '#0f172a',
         display: 'standalone',
