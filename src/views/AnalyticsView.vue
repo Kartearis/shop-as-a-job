@@ -32,6 +32,9 @@ const a = computed(() =>
 )
 
 const maxHour = computed(() => Math.max(1, ...a.value.hourlyDensity))
+
+// Zero-padded hour-of-day, e.g. 9 -> "09:00", so axis reads as clock time.
+const hourLabel = (hour) => `${String(hour).padStart(2, '0')}:00`
 </script>
 
 <template>
@@ -77,10 +80,10 @@ const maxHour = computed(() => Math.max(1, ...a.value.hourlyDensity))
           <div
             class="bar"
             :style="{ height: `${(count / maxHour) * 100}%` }"
-            :title="`${hour}:00 — ${count}`"
+            :title="`${hourLabel(hour)} — ${count}`"
           />
         </div>
-        <span v-if="hour % 3 === 0" class="hour-label">{{ hour }}</span>
+        <span v-if="hour % 3 === 0" class="hour-label">{{ hourLabel(hour) }}</span>
       </div>
     </div>
 

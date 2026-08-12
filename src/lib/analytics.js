@@ -86,23 +86,27 @@ export function hourlyDensity(orders) {
  */
 export function analyze(orders, { from, to, menu = [] } = {}) {
   const scoped = ordersInRange(orders, { from, to })
+  // Analytics reflects *realized* sales: only completed orders count. Open
+  // orders are still in progress (pending, not yet counted) and cancelled ones
+  // are excluded — so closing an order is what registers it in analytics.
+  const sales = scoped.filter((o) => o.status === 'completed')
   const nameOf = (id) => menu.find((m) => m.id === id)?.name ?? id
 
-  const asSold = Object.values(itemsSold(scoped))
+  const asSold = Object.values(itemsSold(sales))
     // Heal the display name for legacy/corrupted lines whose snapshot lost its
     // name (falls back to the menu, then to the raw id — never undefined).
     .map((row) => ({ ...row, name: row.name ?? nameOf(row.id) }))
     .sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name, 'ru'))
-  const explodedDishes = Object.entries(dishSoldCounts(scoped))
+  const explodedDishes = Object.entries(dishSoldCounts(sales))
     .map(([id, qty]) => ({ id, name: nameOf(id), qty }))
     .sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name, 'ru'))
 
   return {
-    totalRevenue: totalRevenue(scoped),
-    promotions: promotions(scoped),
-    orderStats: orderStats(scoped),
+    totalRevenue: totalRevenue(sales),
+    promotions: promotions(sales),
+    orderStats: orderStats(sales),
     itemsAsSold: asSold,
     explodedDishes,
-    hourlyDensity: hourlyDensity(scoped),
+    hourlyDensity: hourlyDensity(sales),
   }
 }

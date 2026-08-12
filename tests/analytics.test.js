@@ -142,12 +142,14 @@ describe('hourlyDensity', () => {
 })
 
 describe('analyze', () => {
+  const completed = { status: 'completed' }
+
   it('composes headline, promo, per-item and density from a scoped range', () => {
     const orders = [
-      order([makeLineItem(combo, 1)], { createdAt: '2026-08-12T09:00:00' }), // paid 28000
-      order([makeLineItem(coffee, 2)], { createdAt: '2026-08-12T10:00:00' }), // paid 40000
-      order([makeLineItem(coffee, 1)], { createdAt: '2026-08-12T11:00:00', free: true }),
-      order([makeLineItem(coffee, 1)], { createdAt: '2026-08-11T10:00:00' }), // out of range
+      order([makeLineItem(combo, 1)], { createdAt: '2026-08-12T09:00:00', ...completed }), // paid 28000
+      order([makeLineItem(coffee, 2)], { createdAt: '2026-08-12T10:00:00', ...completed }), // paid 40000
+      order([makeLineItem(coffee, 1)], { createdAt: '2026-08-12T11:00:00', free: true, ...completed }),
+      order([makeLineItem(coffee, 1)], { createdAt: '2026-08-11T10:00:00', ...completed }), // out of range
     ]
     const result = analyze(orders, {
       from: '2026-08-12T00:00:00',
@@ -166,10 +168,28 @@ describe('analyze', () => {
     expect(result.hourlyDensity[11]).toBe(1)
   })
 
+  it('counts only completed orders — open (pending) and cancelled are excluded', () => {
+    const orders = [
+      order([makeLineItem(coffee, 1)], { createdAt: '2026-08-12T09:00:00', ...completed }), // 20000
+      order([makeLineItem(coffee, 1)], { createdAt: '2026-08-12T10:00:00' }), // open -> pending
+      order([makeLineItem(coffee, 1)], { createdAt: '2026-08-12T11:00:00', status: 'cancelled' }),
+    ]
+    const result = analyze(orders, {
+      from: '2026-08-12T00:00:00',
+      to: '2026-08-13T00:00:00',
+      menu,
+    })
+    expect(result.totalRevenue).toBe(20000) // only the completed order
+    expect(result.orderStats.paidOrders).toBe(1)
+    expect(result.hourlyDensity[9]).toBe(1)
+    expect(result.hourlyDensity[10]).toBe(0) // open order not yet counted
+  })
+
   it('does not crash on legacy lines missing name/price, and reports no NaN', () => {
     // Shape persisted by the old stepper bug: no name/type/unitPrice.
     const corrupt = order([{ itemId: 'coffee', quantity: 1 }], {
       createdAt: '2026-08-12T09:00:00',
+      ...completed,
     })
     const result = analyze([corrupt], {
       from: '2026-08-12T00:00:00',

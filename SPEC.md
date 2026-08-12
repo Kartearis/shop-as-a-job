@@ -145,7 +145,8 @@ Two keys/stores in a single IndexedDB database (e.g. via `idb-keyval`):
 - Add/remove items, change quantities, edit customer name.
 - `updatedAt` is bumped; `total` recomputed on save.
 - Completing an order sets `status: completed` and keeps it in history; it leaves
-  the "current orders" view but remains in analytics.
+  the "current orders" view. **Completion is what registers the sale in analytics**
+  — an `open` order is still in progress and does not yet count toward revenue/sales.
 - Cancelling sets `status: cancelled` (excluded from sales/revenue analytics but
   retained for auditing).
 
@@ -175,15 +176,18 @@ Two keys/stores in a single IndexedDB database (e.g. via `idb-keyval`):
 ### 3.3 Analytics
 
 Computed from full order history (`cafe.orders`), scoped by a selectable date
-range (default: today).
+range (default: today). Analytics reflects **realized sales — only `completed`
+orders count**; `open` orders are pending (not yet counted) and `cancelled` ones
+are excluded. (Stock, §3.2, differs: it counts the food made, so it includes
+`open` orders too.)
 
 - **Per-item totals** — quantity sold and revenue contributed. Reported two ways:
   by **item as sold** (dishes and combos as line items) and by **exploded dish**
   (combos broken into components). Revenue is always attributed to the line's
   charged price (the combo price), never double-counted across its components;
   lines in `free` orders contribute quantity but **₽0 revenue**.
-- **Total revenue** — Σ `order.charged` over the range (excludes `cancelled` and
-  is `0` for `free` orders).
+- **Total revenue** — Σ `order.charged` over `completed` orders in the range
+  (excludes `open` and `cancelled`; is `0` for `free` orders).
 - **Promotions** — count of free orders and the total **nominal value given away**
   (Σ `total` of free orders), reported separately from revenue.
 - **Order count & average order value** (paid orders only, to avoid free orders
