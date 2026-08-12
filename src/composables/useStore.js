@@ -1,6 +1,7 @@
 import { computed } from 'vue'
 import { useIdbRef } from './useIdbRef.js'
 import { SEED_MENU, validateMenu } from '../lib/menu.js'
+import { ordersToCsv } from '../lib/csv.js'
 
 // App-wide state: the code-seeded menu and the full order history, both
 // persisted to IndexedDB. Stock and analytics are derived from `orders`
@@ -61,6 +62,11 @@ export function createStore() {
     )
   }
 
+  /** Flatten order history to a spreadsheet-friendly CSV string (no BOM). */
+  function exportCsv() {
+    return ordersToCsv(orders.value, menu.value)
+  }
+
   /** Replace all data from a previously exported JSON string. Throws on bad input. */
   function importData(json) {
     const parsed = typeof json === 'string' ? JSON.parse(json) : json
@@ -88,6 +94,7 @@ export function createStore() {
     cancelOrder,
     deleteOrder,
     exportData,
+    exportCsv,
     importData,
     flush,
   }
