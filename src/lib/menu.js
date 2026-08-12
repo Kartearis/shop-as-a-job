@@ -47,6 +47,20 @@ export const SEED_MENU = [
 ]
 
 /**
+ * Resolve a combo's component list into display rows `{ itemId, name, quantity }`,
+ * looking each name up in the menu. Falls back to the raw id when the referenced
+ * dish is missing (e.g. a historical order whose menu item was later removed).
+ */
+export function describeComponents(components, menu) {
+  const byId = new Map(menu.map((m) => [m.id, m]))
+  return (components ?? []).map((c) => ({
+    itemId: c.itemId,
+    name: byId.get(c.itemId)?.name ?? c.itemId,
+    quantity: c.quantity,
+  }))
+}
+
+/**
  * Validate a menu's integrity. Returns an array of error strings (empty = ok):
  * unique ids, positive prices, and combo components that reference real dishes.
  */

@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { SwitchRoot, SwitchThumb } from 'reka-ui'
-import { addLine, setLineQuantity, removeLine, lineTotal } from '../lib/orders.js'
+import { addLine, updateLineQuantity, removeLine, lineTotal } from '../lib/orders.js'
+import { describeComponents } from '../lib/menu.js'
 import { formatRub } from '../lib/money.js'
 
 const props = defineProps({
@@ -39,14 +40,21 @@ const canSave = computed(
 )
 
 function add(item) {
+  if (!item) return
   lines.value = addLine(lines.value, item, 1)
 }
-function dec(item) {
-  lines.value = setLineQuantity(lines.value, item, qtyOf(item.id) - 1)
+function inc(itemId) {
+  lines.value = updateLineQuantity(lines.value, itemId, qtyOf(itemId) + 1)
+}
+function dec(itemId) {
+  lines.value = updateLineQuantity(lines.value, itemId, qtyOf(itemId) - 1)
 }
 function remove(itemId) {
   lines.value = removeLine(lines.value, itemId)
 }
+
+// Resolved combo breakdown for display; empty for plain dishes.
+const partsOf = (components) => describeComponents(components, props.menu)
 
 function save() {
   if (!canSave.value) return
@@ -74,16 +82,16 @@ function save() {
 
     <div v-if="lines.length" class="cart">
       <div v-for="l in lines" :key="l.itemId" class="cart-row">
-        <span class="cart-name">{{ l.name }}</span>
+        <span class="cart-name">
+          {{ l.name }}
+          <small v-if="l.type === 'combo'" class="combo-parts">
+            {{ partsOf(l.components).map((c) => `${c.name} ×${c.quantity}`).join(' · ') }}
+          </small>
+        </span>
         <div class="stepper">
-          <button type="button" @click="dec({ id: l.itemId })">−</button>
+          <button type="button" @click="dec(l.itemId)">−</button>
           <span class="qty">{{ l.quantity }}</span>
-          <button
-            type="button"
-            @click="add(menu.find((m) => m.id === l.itemId))"
-          >
-            +
-          </button>
+          <button type="button" @click="inc(l.itemId)">+</button>
         </div>
         <span class="cart-total">{{ formatRub(l.lineTotal) }}</span>
         <button class="x" type="button" aria-label="Убрать" @click="remove(l.itemId)">
@@ -113,8 +121,13 @@ function save() {
           @click="add(item)"
         >
           <span class="mi-name">
-            {{ item.name }}
-            <em v-if="item.type === 'combo'">комбо</em>
+            <span class="mi-name-row">
+              {{ item.name }}
+              <em v-if="item.type === 'combo'">комбо</em>
+            </span>
+            <small v-if="item.type === 'combo'" class="combo-parts">
+              {{ partsOf(item.components).map((c) => `${c.name} ×${c.quantity}`).join(' · ') }}
+            </small>
           </span>
           <span class="mi-price">{{ formatRub(item.price) }}</span>
           <span v-if="qtyOf(item.id) > 0" class="mi-qty">×{{ qtyOf(item.id) }}</span>

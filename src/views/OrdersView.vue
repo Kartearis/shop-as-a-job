@@ -10,6 +10,7 @@ import {
 import OrderForm from '../components/OrderForm.vue'
 import { formatRub } from '../lib/money.js'
 import { orderTotal, orderCharged } from '../lib/orders.js'
+import { describeComponents } from '../lib/menu.js'
 import { elapsedMs, formatElapsed, formatClock } from '../lib/time.js'
 
 const props = defineProps({
@@ -25,6 +26,10 @@ onMounted(() => {
 onUnmounted(() => clearInterval(timer))
 
 const editing = ref(null)
+
+// Resolved combo breakdown for display; empty for plain dishes.
+const partsOf = (components) =>
+  describeComponents(components, props.store.activeMenu.value)
 
 function onEditSave({ customerName, free, lineItems }) {
   props.store.upsertOrder({
@@ -55,7 +60,12 @@ function onEditSave({ customerName, free, lineItems }) {
         </div>
         <ul class="order-lines">
           <li v-for="l in o.lineItems" :key="l.itemId">
-            <span>{{ l.name }} ×{{ l.quantity }}</span>
+            <span>
+              {{ l.name }} ×{{ l.quantity }}
+              <small v-if="l.type === 'combo'" class="combo-parts">
+                {{ partsOf(l.components).map((c) => `${c.name} ×${c.quantity}`).join(' · ') }}
+              </small>
+            </span>
             <span>{{ formatRub(l.lineTotal) }}</span>
           </li>
         </ul>

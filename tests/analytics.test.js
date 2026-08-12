@@ -165,4 +165,20 @@ describe('analyze', () => {
     expect(result.hourlyDensity[10]).toBe(1)
     expect(result.hourlyDensity[11]).toBe(1)
   })
+
+  it('does not crash on legacy lines missing name/price, and reports no NaN', () => {
+    // Shape persisted by the old stepper bug: no name/type/unitPrice.
+    const corrupt = order([{ itemId: 'coffee', quantity: 1 }], {
+      createdAt: '2026-08-12T09:00:00',
+    })
+    const result = analyze([corrupt], {
+      from: '2026-08-12T00:00:00',
+      to: '2026-08-13T00:00:00',
+      menu,
+    })
+    expect(Number.isNaN(result.totalRevenue)).toBe(false)
+    expect(Number.isNaN(result.orderStats.averageOrderValue)).toBe(false)
+    // Name is healed from the menu; revenue counts the unknown price as 0.
+    expect(result.itemsAsSold[0]).toMatchObject({ name: 'Капучино', revenue: 0 })
+  })
 })

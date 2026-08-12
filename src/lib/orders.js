@@ -23,9 +23,10 @@ export function makeLineItem(item, quantity = 1) {
   return line
 }
 
-/** Derived line total in kopecks. Always recomputed, never trusted from cache. */
+/** Derived line total in kopecks. Always recomputed, never trusted from cache.
+ * Missing price/quantity (e.g. legacy-corrupted lines) count as 0, never NaN. */
 export function lineTotal(line) {
-  return line.unitPrice * line.quantity
+  return (line.unitPrice ?? 0) * (line.quantity ?? 0)
 }
 
 /** Nominal order total (sum of line totals), ignoring the free flag. */
@@ -81,6 +82,21 @@ export function setLineQuantity(lines, item, quantity) {
   return lines.map((l) =>
     l.itemId === item.id ? makeLineItem(item, quantity) : l,
   )
+}
+
+/**
+ * Change the quantity of an existing line by item id, reusing the line's own
+ * snapshot (name/price/components) so no menu lookup is needed. A quantity <= 0
+ * removes the line; an unknown id is returned unchanged. Returns a new array.
+ */
+export function updateLineQuantity(lines, itemId, quantity) {
+  if (quantity <= 0) return removeLine(lines, itemId)
+  return lines.map((l) => {
+    if (l.itemId !== itemId) return l
+    const next = { ...l, quantity }
+    next.lineTotal = lineTotal(next)
+    return next
+  })
 }
 
 /** Remove a line by item id. Returns a new array. */

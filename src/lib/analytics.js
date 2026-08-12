@@ -88,9 +88,11 @@ export function analyze(orders, { from, to, menu = [] } = {}) {
   const scoped = ordersInRange(orders, { from, to })
   const nameOf = (id) => menu.find((m) => m.id === id)?.name ?? id
 
-  const asSold = Object.values(itemsSold(scoped)).sort(
-    (a, b) => b.qty - a.qty || a.name.localeCompare(b.name, 'ru'),
-  )
+  const asSold = Object.values(itemsSold(scoped))
+    // Heal the display name for legacy/corrupted lines whose snapshot lost its
+    // name (falls back to the menu, then to the raw id — never undefined).
+    .map((row) => ({ ...row, name: row.name ?? nameOf(row.id) }))
+    .sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name, 'ru'))
   const explodedDishes = Object.entries(dishSoldCounts(scoped))
     .map(([id, qty]) => ({ id, name: nameOf(id), qty }))
     .sort((a, b) => b.qty - a.qty || a.name.localeCompare(b.name, 'ru'))

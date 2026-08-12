@@ -14,7 +14,9 @@ function onSave({ customerName, free, lineItems }) {
   const order = createOrder({ customerName, free })
   order.lineItems = lineItems
   props.store.upsertOrder(order)
-  formKey.value++ // reset the form
+  // Don't re-key here: switching tabs unmounts this view (unmountOnHide), so it
+  // remounts fresh next time. Re-keying while the tab unmounts races Vue's
+  // scheduler and crashes reka-ui's <Presence> (null emitsOptions/parentNode).
   emit('created')
 }
 

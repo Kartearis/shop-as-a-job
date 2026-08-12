@@ -68,6 +68,29 @@ describe('OrderForm', () => {
     expect(wrapper.get('.cart-row .qty').text()).toBe('2')
   })
 
+  it('decrementing quantity keeps the line name and price intact', async () => {
+    const wrapper = mount(OrderForm, { props: { menu } })
+    await firstMenuButton(wrapper, 'Капучино').trigger('click')
+    await firstMenuButton(wrapper, 'Капучино').trigger('click')
+
+    const cartRow = wrapper.get('.cart-row')
+    const [minus] = cartRow.findAll('.stepper button')
+    await minus.trigger('click')
+
+    expect(cartRow.get('.qty').text()).toBe('1')
+    expect(cartRow.get('.cart-name').text()).toContain('Капучино')
+    // Regression: price must stay a real amount, not NaN/undefined.
+    const total = cartRow.get('.cart-total').text()
+    expect(total).toContain('220')
+    expect(total).not.toContain('NaN')
+  })
+
+  it('shows a combo breakdown in the cart', async () => {
+    const wrapper = mount(OrderForm, { props: { menu } })
+    await firstMenuButton(wrapper, 'Завтрак').trigger('click')
+    expect(wrapper.get('.cart-row .combo-parts').text()).toContain('Капучино ×1')
+  })
+
   it('emits cancel', async () => {
     const wrapper = mount(OrderForm, { props: { menu } })
     await wrapper.get('.ghost').trigger('click')

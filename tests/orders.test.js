@@ -7,6 +7,7 @@ import {
   createOrder,
   addLine,
   setLineQuantity,
+  updateLineQuantity,
   removeLine,
 } from '../src/lib/orders.js'
 
@@ -144,6 +145,45 @@ describe('setLineQuantity', () => {
     const lines = setLineQuantity([], coffee, 3)
     expect(lines).toHaveLength(1)
     expect(lines[0].quantity).toBe(3)
+  })
+})
+
+describe('updateLineQuantity', () => {
+  it('changes quantity using the line snapshot, preserving name and price', () => {
+    const lines = addLine([], coffee, 3)
+    const next = updateLineQuantity(lines, 'coffee', 1)
+    expect(next[0]).toMatchObject({
+      itemId: 'coffee',
+      name: 'Капучино',
+      unitPrice: 20000,
+      quantity: 1,
+      lineTotal: 20000,
+    })
+  })
+
+  it('keeps a combo component breakdown when changing quantity', () => {
+    const lines = addLine([], combo, 2)
+    const next = updateLineQuantity(lines, 'breakfast', 1)
+    expect(next[0].components).toEqual([
+      { itemId: 'coffee', quantity: 1 },
+      { itemId: 'croissant', quantity: 1 },
+    ])
+  })
+
+  it('removes the line when quantity drops to 0', () => {
+    const lines = addLine([], coffee)
+    expect(updateLineQuantity(lines, 'coffee', 0)).toHaveLength(0)
+  })
+
+  it('leaves unknown ids untouched', () => {
+    const lines = addLine([], coffee)
+    expect(updateLineQuantity(lines, 'nope', 5)).toEqual(lines)
+  })
+
+  it('does not mutate the input array', () => {
+    const lines = addLine([], coffee, 2)
+    updateLineQuantity(lines, 'coffee', 1)
+    expect(lines[0].quantity).toBe(2)
   })
 })
 
