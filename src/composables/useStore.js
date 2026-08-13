@@ -1,6 +1,13 @@
 import { computed } from 'vue'
 import { useIdbRef } from './useIdbRef.js'
-import { SEED_MENU, validateMenu } from '../lib/menu.js'
+import {
+  SEED_MENU,
+  validateMenu,
+  makeMenuId,
+  upsertMenuItem as upsertMenuItemPure,
+  setMenuItemActive,
+  activeOrdersUsingItem,
+} from '../lib/menu.js'
 import { ordersToCsv } from '../lib/csv.js'
 
 // App-wide state: the code-seeded menu and the full order history, both
@@ -59,6 +66,53 @@ export function createStore() {
     orders.value = orders.value.filter((o) => o.id !== id)
   }
 
+  /**
+   * Add a new menu item or update an existing one. An item without an id is
+   * treated as new and gets a unique id derived from its name. Returns the
+   * stored item (with its resolved id).
+   */
+  function upsertMenuItem(item) {
+    const stored = item.id
+      ? item
+      : { ...item, id: makeMenuId(item.name, menu.value) }
+    menu.value = upsertMenuItemPure(menu.value, stored)
+    return stored
+  }
+
+  /** Soft-delete a menu item: hidden from ordering, kept for history/analytics. */
+  function deleteMenuItem(id) {
+    menu.value = setMenuItemActive(menu.value, id, false)
+  }
+
+  /** Restore a soft-deleted menu item. */
+  function restoreMenuItem(id) {
+    menu.value = setMenuItemActive(menu.value, id, true)
+  }
+
+  /** Open orders that use a menu item as a line — for the edit warning. */
+  function ordersUsingItem(id) {
+    return activeOrdersUsingItem(orders.value, id)
+  }
+
+  /** Serialise just the menu for export. */
+  function exportMenu() {
+    return JSON.stringify({ version: 1, menu: menu.value }, null, 2)
+  }
+
+  /** Replace the menu from an exported JSON string. Throws on bad input. */
+  function importMenu(json) {
+    const parsed = typeof json === 'string' ? JSON.parse(json) : json
+    const nextMenu = Array.isArray(parsed) ? parsed : parsed.menu
+    if (!Array.isArray(nextMenu)) {
+      throw new Error('Invalid menu file: expected a menu array')
+    }
+    const errors = validateMenu(nextMenu)
+    if (errors.length) {
+      throw new Error(`Invalid menu: ${errors[0]}`)
+    }
+    menu.value = nextMenu
+  }
+
   /** Serialise all data for backup/export. */
   function exportData() {
     return JSON.stringify(
@@ -100,6 +154,12 @@ export function createStore() {
     completeOrder,
     cancelOrder,
     deleteOrder,
+    upsertMenuItem,
+    deleteMenuItem,
+    restoreMenuItem,
+    ordersUsingItem,
+    exportMenu,
+    importMenu,
     exportData,
     exportCsv,
     importData,

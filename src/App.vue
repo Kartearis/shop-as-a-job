@@ -7,6 +7,7 @@ import OrdersView from './views/OrdersView.vue'
 import HistoryView from './views/HistoryView.vue'
 import StockView from './views/StockView.vue'
 import AnalyticsView from './views/AnalyticsView.vue'
+import MenuView from './views/MenuView.vue'
 import BackupControls from './components/BackupControls.vue'
 
 const store = useStore()
@@ -18,6 +19,7 @@ const tabs = [
   { value: 'history', label: 'История', icon: '⟲' },
   { value: 'stock', label: 'Продано', icon: '▤' },
   { value: 'analytics', label: 'Аналитика', icon: '▮' },
+  { value: 'menu', label: 'Меню', icon: '≣' },
 ]
 </script>
 
@@ -34,6 +36,7 @@ const tabs = [
       <TabsContent value="history"><HistoryView :store="store" /></TabsContent>
       <TabsContent value="stock"><StockView :store="store" /></TabsContent>
       <TabsContent value="analytics"><AnalyticsView :store="store" /></TabsContent>
+      <TabsContent value="menu"><MenuView :store="store" /></TabsContent>
     </main>
 
     <TabsList class="tab-bar" aria-label="Разделы">

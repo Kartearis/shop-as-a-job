@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { SEED_MENU, validateMenu } from '../src/lib/menu.js'
+import {
+  SEED_MENU,
+  validateMenu,
+  slugify,
+  makeMenuId,
+  upsertMenuItem,
+  setMenuItemActive,
+  activeOrdersUsingItem,
+} from '../src/lib/menu.js'
 
 describe('SEED_MENU', () => {
   it('passes its own validation', () => {
@@ -68,5 +76,71 @@ describe('validateMenu', () => {
     expect(validateMenu(menu)).toContain(
       'Combo c has non-positive component qty: d',
     )
+  })
+})
+
+describe('slugify', () => {
+  it('lowercases and underscores non-alphanumerics, keeping unicode letters', () => {
+    expect(slugify('Раф Кокос')).toBe('раф_кокос')
+    expect(slugify('Flat White 2.0')).toBe('flat_white_2_0')
+  })
+
+  it('never returns an empty string', () => {
+    expect(slugify('')).toBe('item')
+    expect(slugify('   ')).toBe('item')
+    expect(slugify('!!!')).toBe('item')
+  })
+})
+
+describe('makeMenuId', () => {
+  it('derives an id from the name when free', () => {
+    expect(makeMenuId('Раф', [])).toBe('раф')
+  })
+
+  it('suffixes on collision', () => {
+    const menu = [{ id: 'раф' }, { id: 'раф_2' }]
+    expect(makeMenuId('Раф', menu)).toBe('раф_3')
+  })
+})
+
+describe('upsertMenuItem', () => {
+  it('appends a new item and does not mutate the input', () => {
+    const menu = [{ id: 'a', price: 100 }]
+    const next = upsertMenuItem(menu, { id: 'b', price: 200 })
+    expect(next).toHaveLength(2)
+    expect(menu).toHaveLength(1)
+  })
+
+  it('replaces in place, preserving position', () => {
+    const menu = [{ id: 'a', price: 100 }, { id: 'b', price: 200 }]
+    const next = upsertMenuItem(menu, { id: 'a', price: 999 })
+    expect(next.map((i) => i.id)).toEqual(['a', 'b'])
+    expect(next[0].price).toBe(999)
+  })
+})
+
+describe('setMenuItemActive', () => {
+  it('toggles the active flag without mutating input', () => {
+    const menu = [{ id: 'a', active: true }]
+    const next = setMenuItemActive(menu, 'a', false)
+    expect(next[0].active).toBe(false)
+    expect(menu[0].active).toBe(true)
+  })
+})
+
+describe('activeOrdersUsingItem', () => {
+  const orders = [
+    { id: 'o1', status: 'open', lineItems: [{ itemId: 'latte' }] },
+    { id: 'o2', status: 'open', lineItems: [{ itemId: 'tea' }] },
+    { id: 'o3', status: 'completed', lineItems: [{ itemId: 'latte' }] },
+  ]
+
+  it('returns only open orders that reference the item as a line', () => {
+    expect(activeOrdersUsingItem(orders, 'latte').map((o) => o.id)).toEqual(['o1'])
+  })
+
+  it('returns empty when nothing matches', () => {
+    expect(activeOrdersUsingItem(orders, 'ghost')).toEqual([])
+    expect(activeOrdersUsingItem([], 'latte')).toEqual([])
   })
 })

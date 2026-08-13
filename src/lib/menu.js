@@ -61,6 +61,65 @@ export function describeComponents(components, menu) {
 }
 
 /**
+ * Turn a display name into a slug usable as an id. Keeps unicode letters/digits
+ * (so Cyrillic names stay readable), lowercases, collapses runs of other
+ * characters to a single underscore. Never returns an empty string.
+ */
+export function slugify(name) {
+  const slug = (name ?? '')
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, '_')
+    .replace(/^_+|_+$/g, '')
+  return slug || 'item'
+}
+
+/**
+ * Build a menu id from a name that is unique within `menu`. Appends `_2`, `_3`,
+ * … on collision so re-adding a same-named item never duplicates an id.
+ */
+export function makeMenuId(name, menu) {
+  const base = slugify(name)
+  const taken = new Set(menu.map((i) => i.id))
+  if (!taken.has(base)) return base
+  let n = 2
+  while (taken.has(`${base}_${n}`)) n += 1
+  return `${base}_${n}`
+}
+
+/**
+ * Insert a new item or replace an existing one (matched by id). Pure: returns a
+ * new array, preserving position on replace and appending on insert.
+ */
+export function upsertMenuItem(menu, item) {
+  const exists = menu.some((i) => i.id === item.id)
+  return exists
+    ? menu.map((i) => (i.id === item.id ? item : i))
+    : [...menu, item]
+}
+
+/**
+ * Set an item's `active` flag (soft delete / restore). Pure: returns a new
+ * array. The item stays in the menu so history, active orders and analytics —
+ * which reference it by id — keep resolving its name.
+ */
+export function setMenuItemActive(menu, id, active) {
+  return menu.map((i) => (i.id === id ? { ...i, active } : i))
+}
+
+/**
+ * Open orders that reference an item directly as a line (used to warn before
+ * saving edits). Combo lines are frozen snapshots, so editing a dish that is
+ * merely a component of a combo in an order does not rewrite that order.
+ */
+export function activeOrdersUsingItem(orders, itemId) {
+  return (orders ?? []).filter(
+    (o) => o.status === 'open' && (o.lineItems ?? []).some((l) => l.itemId === itemId),
+  )
+}
+
+/**
  * Validate a menu's integrity. Returns an array of error strings (empty = ok):
  * unique ids, positive prices, and combo components that reference real dishes.
  */

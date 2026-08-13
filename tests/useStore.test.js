@@ -112,3 +112,68 @@ describe('createStore', () => {
     expect(() => store.importData('{"foo":1}')).toThrow()
   })
 })
+
+describe('menu editing', () => {
+  it('adds a new item with a generated id derived from its name', async () => {
+    const store = createStore()
+    await store.ready
+    const before = store.menu.value.length
+    const stored = store.upsertMenuItem({
+      name: 'Раф',
+      type: 'dish',
+      price: 25000,
+      category: 'Кофе',
+      active: true,
+    })
+    expect(stored.id).toBe('раф')
+    expect(store.menu.value).toHaveLength(before + 1)
+  })
+
+  it('updates an existing item in place', async () => {
+    const store = createStore()
+    await store.ready
+    store.upsertMenuItem({ id: 'latte', name: 'Латте', type: 'dish', price: 30000, active: true })
+    expect(store.menu.value.find((i) => i.id === 'latte').price).toBe(30000)
+    expect(store.menu.value.filter((i) => i.id === 'latte')).toHaveLength(1)
+  })
+
+  it('soft-deletes and restores, keeping the item in the menu', async () => {
+    const store = createStore()
+    await store.ready
+    store.deleteMenuItem('latte')
+    expect(store.menu.value.find((i) => i.id === 'latte').active).toBe(false)
+    expect(store.activeMenu.value.some((i) => i.id === 'latte')).toBe(false)
+
+    store.restoreMenuItem('latte')
+    expect(store.activeMenu.value.some((i) => i.id === 'latte')).toBe(true)
+  })
+
+  it('reports open orders that use an item', async () => {
+    const store = createStore()
+    await store.ready
+    store.upsertOrder(openOrder('o1', [makeLineItem(coffee, 1)]))
+    expect(store.ordersUsingItem('cappuccino').map((o) => o.id)).toEqual(['o1'])
+    expect(store.ordersUsingItem('espresso')).toEqual([])
+  })
+
+  it('exports and re-imports the menu round-trip', async () => {
+    const store = createStore()
+    await store.ready
+    store.deleteMenuItem('latte')
+    const dump = store.exportMenu()
+
+    const fresh = createStore()
+    await fresh.ready
+    fresh.importMenu(dump)
+    expect(fresh.menu.value.find((i) => i.id === 'latte').active).toBe(false)
+  })
+
+  it('rejects an invalid menu import', async () => {
+    const store = createStore()
+    await store.ready
+    expect(() => store.importMenu('{"foo":1}')).toThrow()
+    expect(() =>
+      store.importMenu(JSON.stringify({ menu: [{ id: 'x', type: 'dish', price: 0 }] })),
+    ).toThrow()
+  })
+})
