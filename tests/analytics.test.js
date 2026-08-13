@@ -6,6 +6,7 @@ import {
   orderStats,
   itemsSold,
   hourlyDensity,
+  deliveryStats,
   analyze,
 } from '../src/lib/analytics.js'
 import { makeLineItem, createOrder } from '../src/lib/orders.js'
@@ -141,6 +142,22 @@ describe('hourlyDensity', () => {
   })
 })
 
+describe('deliveryStats', () => {
+  it('counts delivery orders and their percent share', () => {
+    const orders = [
+      order([], { delivery: true }),
+      order([], { delivery: true }),
+      order([], { delivery: false }),
+      order([]),
+    ]
+    expect(deliveryStats(orders)).toEqual({ count: 2, total: 4, percent: 50 })
+  })
+
+  it('reports zero percent for an empty set', () => {
+    expect(deliveryStats([])).toEqual({ count: 0, total: 0, percent: 0 })
+  })
+})
+
 describe('analyze', () => {
   const completed = { status: 'completed' }
 
@@ -166,6 +183,21 @@ describe('analyze', () => {
     expect(result.hourlyDensity[9]).toBe(1)
     expect(result.hourlyDensity[10]).toBe(1)
     expect(result.hourlyDensity[11]).toBe(1)
+  })
+
+  it('reports delivery share over completed sales only', () => {
+    const orders = [
+      order([makeLineItem(coffee, 1)], { createdAt: '2026-08-12T09:00:00', delivery: true, ...completed }),
+      order([makeLineItem(coffee, 1)], { createdAt: '2026-08-12T10:00:00', ...completed }),
+      // delivery but still open -> not a realized sale, excluded
+      order([makeLineItem(coffee, 1)], { createdAt: '2026-08-12T11:00:00', delivery: true }),
+    ]
+    const result = analyze(orders, {
+      from: '2026-08-12T00:00:00',
+      to: '2026-08-13T00:00:00',
+      menu,
+    })
+    expect(result.deliveries).toEqual({ count: 1, total: 2, percent: 50 })
   })
 
   it('counts only completed orders — open (pending) and cancelled are excluded', () => {

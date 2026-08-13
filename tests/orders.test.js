@@ -98,12 +98,20 @@ describe('createOrder', () => {
       id: 'o1',
       customerName: 'Аня',
       comment: '',
+      delivery: false,
+      address: '',
       createdAt: '2026-08-12T09:00:00.000Z',
       updatedAt: '2026-08-12T09:00:00.000Z',
       status: 'open',
       free: false,
       lineItems: [],
     })
+  })
+
+  it('carries optional delivery details', () => {
+    const order = createOrder({ customerName: 'Аня', delivery: true, address: 'Ленина, 1' })
+    expect(order.delivery).toBe(true)
+    expect(order.address).toBe('Ленина, 1')
   })
 
   it('carries an optional comment', () => {

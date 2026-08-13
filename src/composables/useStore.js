@@ -31,9 +31,11 @@ export function createStore() {
   const orders = ordersRef.data
 
   const activeMenu = computed(() => menu.value.filter((i) => i.active !== false))
+  // Active orders still in progress: 'open' (being prepared) and 'ready'
+  // (delivery order out for delivery). Both live in the current-orders tab.
   const liveOrders = computed(() =>
     orders.value
-      .filter((o) => o.status === 'open')
+      .filter((o) => o.status === 'open' || o.status === 'ready')
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
   )
   // Finished orders for the history view, most recently completed first.
@@ -65,6 +67,8 @@ export function createStore() {
 
   const completeOrder = (id) => setStatus(id, 'completed')
   const cancelOrder = (id) => setStatus(id, 'cancelled')
+  // Delivery orders step through 'ready' (out for delivery) before completion.
+  const markReady = (id) => setStatus(id, 'ready')
 
   function deleteOrder(id) {
     orders.value = orders.value.filter((o) => o.id !== id)
@@ -158,6 +162,7 @@ export function createStore() {
     upsertOrder,
     completeOrder,
     cancelOrder,
+    markReady,
     deleteOrder,
     upsertMenuItem,
     deleteMenuItem,

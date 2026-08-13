@@ -10,8 +10,8 @@ const emit = defineEmits(['created'])
 
 const formKey = ref(0)
 
-function onSave({ customerName, free, lineItems, comment }) {
-  const order = createOrder({ customerName, free, comment })
+function onSave({ customerName, free, lineItems, comment, delivery, address }) {
+  const order = createOrder({ customerName, free, comment, delivery, address })
   order.lineItems = lineItems
   props.store.upsertOrder(order)
   // Don't re-key here: switching tabs unmounts this view (unmountOnHide), so it

@@ -69,6 +69,13 @@ export function itemsSold(orders) {
   return acc
 }
 
+/** Delivery share of the given orders: how many, and what percent of the total. */
+export function deliveryStats(orders) {
+  const total = orders.length
+  const count = orders.filter((o) => o.delivery).length
+  return { count, total, percent: total ? Math.round((count / total) * 100) : 0 }
+}
+
 /** Orders bucketed by local hour of day (0..23) — customer density. */
 export function hourlyDensity(orders) {
   const buckets = Array.from({ length: 24 }, () => 0)
@@ -105,6 +112,7 @@ export function analyze(orders, { from, to, menu = [] } = {}) {
     totalRevenue: totalRevenue(sales),
     promotions: promotions(sales),
     orderStats: orderStats(sales),
+    deliveries: deliveryStats(sales),
     itemsAsSold: asSold,
     explodedDishes,
     hourlyDensity: hourlyDensity(sales),

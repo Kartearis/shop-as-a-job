@@ -67,6 +67,11 @@ const hourLabel = (hour) => `${String(hour).padStart(2, '0')}:00`
         <strong>{{ a.promotions.count }}</strong>
         <span class="kpi-sub">−{{ formatRub(a.promotions.valueGivenAway) }}</span>
       </div>
+      <div class="kpi">
+        <span class="kpi-label">Доставка</span>
+        <strong>{{ a.deliveries.count }}</strong>
+        <span class="kpi-sub">{{ a.deliveries.percent }}% заказов</span>
+      </div>
     </div>
 
     <h3>Плотность клиентов по часам</h3>

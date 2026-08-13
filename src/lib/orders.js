@@ -46,6 +46,8 @@ export function createOrder({
   customerName = '',
   free = false,
   comment = '',
+  delivery = false,
+  address = '',
   id = crypto.randomUUID(),
   createdAt = new Date().toISOString(),
 } = {}) {
@@ -53,6 +55,8 @@ export function createOrder({
     id,
     customerName,
     comment,
+    delivery,
+    address,
     createdAt,
     updatedAt: createdAt,
     status: 'open',

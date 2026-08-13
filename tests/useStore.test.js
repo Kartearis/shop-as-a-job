@@ -75,6 +75,19 @@ describe('createStore', () => {
     expect(store.completedOrders.value.map((o) => o.id)).toEqual(['b', 'a'])
   })
 
+  it('markReady moves an order to ready and it stays in liveOrders', async () => {
+    const store = createStore()
+    await store.ready
+    store.upsertOrder({ ...openOrder('d1'), delivery: true, address: 'Ленина, 1' })
+    store.markReady('d1')
+    expect(store.orders.value[0].status).toBe('ready')
+    // 'ready' delivery orders are still active until completed.
+    expect(store.liveOrders.value.map((o) => o.id)).toEqual(['d1'])
+    store.completeOrder('d1')
+    expect(store.liveOrders.value).toHaveLength(0)
+    expect(store.completedOrders.value.map((o) => o.id)).toEqual(['d1'])
+  })
+
   it('completeOrder and cancelOrder change status', async () => {
     const store = createStore()
     await store.ready

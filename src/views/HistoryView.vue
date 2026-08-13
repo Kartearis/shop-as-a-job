@@ -35,6 +35,7 @@ const timeSpent = (o) =>
         <span class="hist-cust">
           <span class="order-no">№{{ numberOf(o.id) }}</span>
           {{ o.customerName }}
+          <span v-if="o.delivery" class="delivery-tag">Доставка</span>
         </span>
         <span class="hist-meta">
           {{ createdAt(o) }} · выполнен за {{ timeSpent(o) }}

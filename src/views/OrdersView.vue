@@ -41,12 +41,14 @@ const numberOf = (id) => props.store.orderNumbers.value.get(id)
 const partsOf = (components) =>
   describeComponents(components, props.store.activeMenu.value)
 
-function onEditSave({ customerName, comment, free, lineItems }) {
+function onEditSave({ customerName, comment, free, lineItems, delivery, address }) {
   props.store.upsertOrder({
     ...editing.value,
     customerName,
     comment,
     free,
+    delivery,
+    address,
     lineItems,
   })
   editing.value = null
@@ -72,12 +74,18 @@ function closeConfirm() {
   confirm.value = null
 }
 
+function markReady(o) {
+  props.store.markReady(o.id)
+}
 function askComplete(o) {
+  const delivered = o.delivery
   askConfirm(
     {
-      title: 'Завершить заказ?',
-      message: `Заказ №${numberOf(o.id)} · ${o.customerName} будет отмечен как готовый.`,
-      actionLabel: 'Готово',
+      title: delivered ? 'Заказ доставлен?' : 'Завершить заказ?',
+      message: delivered
+        ? `Заказ №${numberOf(o.id)} · ${o.customerName} будет отмечен как доставленный.`
+        : `Заказ №${numberOf(o.id)} · ${o.customerName} будет отмечен как готовый.`,
+      actionLabel: delivered ? 'Доставлен' : 'Готово',
     },
     () => props.store.completeOrder(o.id),
   )
@@ -114,6 +122,11 @@ function askCancel(o) {
             {{ formatElapsed(elapsedMs(o.createdAt, now)) }}
           </span>
         </div>
+        <p v-if="o.delivery" class="order-delivery">
+          <span class="delivery-tag">Доставка</span>
+          <span v-if="o.status === 'ready'" class="ready-tag">В доставке</span>
+          <span class="delivery-address">{{ o.address }}</span>
+        </p>
         <p v-if="o.comment" class="order-comment">
           <span class="comment-hint">Комментарий:</span> {{ o.comment }}
         </p>
@@ -135,7 +148,16 @@ function askCancel(o) {
         <div class="order-actions">
           <button class="ghost" @click="editing = o">Изменить</button>
           <button class="danger" @click="askCancel(o)">Отменить</button>
-          <button class="primary" @click="askComplete(o)">Готово</button>
+          <button
+            v-if="o.delivery && o.status === 'open'"
+            class="primary"
+            @click="markReady(o)"
+          >
+            Готов к доставке
+          </button>
+          <button v-else class="primary" @click="askComplete(o)">
+            {{ o.delivery ? 'Доставлен' : 'Готово' }}
+          </button>
         </div>
       </li>
     </ul>

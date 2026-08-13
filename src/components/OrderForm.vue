@@ -16,6 +16,8 @@ const emit = defineEmits(['save', 'cancel'])
 const customerName = ref(props.order?.customerName ?? '')
 const comment = ref(props.order?.comment ?? '')
 const free = ref(props.order?.free ?? false)
+const delivery = ref(props.order?.delivery ?? false)
+const address = ref(props.order?.address ?? '')
 const lines = ref(props.order ? [...props.order.lineItems] : [])
 const search = ref('')
 
@@ -37,7 +39,10 @@ const total = computed(() => lines.value.reduce((s, l) => s + lineTotal(l), 0))
 const charged = computed(() => (free.value ? 0 : total.value))
 
 const canSave = computed(
-  () => customerName.value.trim().length > 0 && lines.value.length > 0,
+  () =>
+    customerName.value.trim().length > 0 &&
+    lines.value.length > 0 &&
+    (!delivery.value || address.value.trim().length > 0),
 )
 
 function add(item) {
@@ -63,6 +68,8 @@ function save() {
     customerName: customerName.value.trim(),
     comment: comment.value.trim(),
     free: free.value,
+    delivery: delivery.value,
+    address: delivery.value ? address.value.trim() : '',
     lineItems: lines.value,
   })
 }
@@ -83,6 +90,18 @@ function save() {
         rows="2"
         placeholder="Например, без сахара, с собой"
       />
+    </label>
+
+    <label class="switch-row">
+      <SwitchRoot v-model="delivery" class="switch">
+        <SwitchThumb class="switch-thumb" />
+      </SwitchRoot>
+      <span>Доставка</span>
+    </label>
+
+    <label v-if="delivery" class="field">
+      <span>Адрес доставки</span>
+      <input v-model="address" placeholder="Улица, дом, квартира" />
     </label>
 
     <label class="switch-row">

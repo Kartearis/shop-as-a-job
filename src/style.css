@@ -419,6 +419,37 @@ textarea:focus {
   padding: 0.35rem 0.5rem;
 }
 
+.order-delivery {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+}
+
+.delivery-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 0 5px;
+}
+
+.ready-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--ok);
+  border: 1px solid var(--ok);
+  border-radius: 4px;
+  padding: 0 5px;
+}
+
+.delivery-address {
+  color: var(--muted);
+}
+
 .comment-hint {
   color: var(--muted);
   font-size: 0.78rem;
