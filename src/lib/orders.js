@@ -1,6 +1,8 @@
 // Pure order-domain logic: building line items from menu items, computing
 // totals, and the free/promotional charged amount. No I/O, no framework.
 
+import { dayKey } from './time.js'
+
 /**
  * Build an order line as a snapshot of a menu item. Combo lines also freeze
  * their component breakdown so later menu edits never rewrite history.
@@ -43,18 +45,41 @@ export function orderCharged(order) {
 export function createOrder({
   customerName = '',
   free = false,
+  comment = '',
   id = crypto.randomUUID(),
   createdAt = new Date().toISOString(),
 } = {}) {
   return {
     id,
     customerName,
+    comment,
     createdAt,
     updatedAt: createdAt,
     status: 'open',
     free,
     lineItems: [],
   }
+}
+
+/**
+ * Assign a per-day sequential number to each order, resetting at local
+ * midnight. Orders are numbered by createdAt within their calendar day — all
+ * statuses counted, so a number stays fixed as its order completes or cancels.
+ * Returns a Map of order id -> number.
+ */
+export function dailyOrderNumbers(orders) {
+  const perDay = new Map()
+  const numbers = new Map()
+  const sorted = [...orders].sort(
+    (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+  )
+  for (const o of sorted) {
+    const key = dayKey(o.createdAt)
+    const n = (perDay.get(key) ?? 0) + 1
+    perDay.set(key, n)
+    numbers.set(o.id, n)
+  }
+  return numbers
 }
 
 /**

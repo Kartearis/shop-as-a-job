@@ -27,6 +27,15 @@ export function formatDate(iso) {
   return new Date(iso).toLocaleDateString('ru-RU')
 }
 
+/** Local calendar-day key "YYYY-MM-DD" for grouping timestamps by day. */
+export function dayKey(iso) {
+  const d = new Date(iso)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 /** Start-of-day ISO (local) for a given Date — used for the analytics range. */
 export function startOfDay(date) {
   const d = new Date(date)

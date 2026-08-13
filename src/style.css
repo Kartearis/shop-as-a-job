@@ -138,8 +138,21 @@ input[type='number'],
   width: 100%;
 }
 
-input:focus {
+input:focus,
+textarea:focus {
   outline: 2px solid var(--accent);
+}
+
+.comment-input {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  width: 100%;
+  resize: vertical;
 }
 
 /* ---------- Switch ---------- */
@@ -391,6 +404,26 @@ input:focus {
   font-size: 0.8rem;
 }
 
+.order-no {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  margin-right: 0.35rem;
+}
+
+.order-comment {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--panel-2);
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+}
+
+.comment-hint {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .order-lines {
   list-style: none;
   margin: 0 0 0.5rem;
@@ -440,6 +473,16 @@ input:focus {
 
 .hist-cust {
   font-weight: 600;
+}
+
+.hist-meta {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.hist-comment {
+  font-size: 0.85rem;
+  color: var(--text);
 }
 
 .hist-items {

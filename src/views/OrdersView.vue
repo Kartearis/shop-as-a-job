@@ -6,10 +6,18 @@ import {
   DialogOverlay,
   DialogContent,
   DialogTitle,
+  AlertDialogRoot,
+  AlertDialogPortal,
+  AlertDialogOverlay,
+  AlertDialogContent,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction,
 } from 'reka-ui'
 import OrderForm from '../components/OrderForm.vue'
 import { formatRub } from '../lib/money.js'
-import { orderTotal, orderCharged } from '../lib/orders.js'
+import { orderTotal } from '../lib/orders.js'
 import { describeComponents } from '../lib/menu.js'
 import { elapsedMs, formatElapsed, formatClock } from '../lib/time.js'
 
@@ -27,18 +35,63 @@ onUnmounted(() => clearInterval(timer))
 
 const editing = ref(null)
 
+const numberOf = (id) => props.store.orderNumbers.value.get(id)
+
 // Resolved combo breakdown for display; empty for plain dishes.
 const partsOf = (components) =>
   describeComponents(components, props.store.activeMenu.value)
 
-function onEditSave({ customerName, free, lineItems }) {
+function onEditSave({ customerName, comment, free, lineItems }) {
   props.store.upsertOrder({
     ...editing.value,
     customerName,
+    comment,
     free,
     lineItems,
   })
   editing.value = null
+}
+
+// Confirmation before finishing/cancelling an order. `confirm` drives the
+// dialog; the deferred action is held separately so the dialog's auto-close
+// (which clears `confirm`) can't race the handler and drop the action.
+const confirm = ref(null) // { title, message, actionLabel, danger }
+let confirmAction = null
+
+function askConfirm(dialog, action) {
+  confirm.value = dialog
+  confirmAction = action
+}
+function runConfirm() {
+  const action = confirmAction
+  confirmAction = null
+  confirm.value = null
+  if (action) action()
+}
+function closeConfirm() {
+  confirm.value = null
+}
+
+function askComplete(o) {
+  askConfirm(
+    {
+      title: 'Завершить заказ?',
+      message: `Заказ №${numberOf(o.id)} · ${o.customerName} будет отмечен как готовый.`,
+      actionLabel: 'Готово',
+    },
+    () => props.store.completeOrder(o.id),
+  )
+}
+function askCancel(o) {
+  askConfirm(
+    {
+      title: 'Отменить заказ?',
+      message: `Заказ №${numberOf(o.id)} · ${o.customerName} будет отменён.`,
+      actionLabel: 'Отменить заказ',
+      danger: true,
+    },
+    () => props.store.cancelOrder(o.id),
+  )
 }
 </script>
 
@@ -53,11 +106,17 @@ function onEditSave({ customerName, free, lineItems }) {
     <ul class="orders">
       <li v-for="o in store.liveOrders.value" :key="o.id" class="order-card">
         <div class="order-head">
-          <span class="cust">{{ o.customerName }}</span>
+          <span class="cust">
+            <span class="order-no">№{{ numberOf(o.id) }}</span>
+            {{ o.customerName }}
+          </span>
           <span class="badge" :title="formatClock(o.createdAt)">
             {{ formatElapsed(elapsedMs(o.createdAt, now)) }}
           </span>
         </div>
+        <p v-if="o.comment" class="order-comment">
+          <span class="comment-hint">Комментарий:</span> {{ o.comment }}
+        </p>
         <ul class="order-lines">
           <li v-for="l in o.lineItems" :key="l.itemId">
             <span>
@@ -75,8 +134,8 @@ function onEditSave({ customerName, free, lineItems }) {
         </div>
         <div class="order-actions">
           <button class="ghost" @click="editing = o">Изменить</button>
-          <button class="danger" @click="store.cancelOrder(o.id)">Отменить</button>
-          <button class="primary" @click="store.completeOrder(o.id)">Готово</button>
+          <button class="danger" @click="askCancel(o)">Отменить</button>
+          <button class="primary" @click="askComplete(o)">Готово</button>
         </div>
       </li>
     </ul>
@@ -99,5 +158,27 @@ function onEditSave({ customerName, free, lineItems }) {
         </DialogContent>
       </DialogPortal>
     </DialogRoot>
+
+    <!-- Confirm before finishing/cancelling an order -->
+    <AlertDialogRoot :open="!!confirm" @update:open="(v) => !v && closeConfirm()">
+      <AlertDialogPortal>
+        <AlertDialogOverlay class="dialog-overlay" />
+        <AlertDialogContent class="alert-content">
+          <AlertDialogTitle class="dialog-title">{{ confirm?.title }}</AlertDialogTitle>
+          <AlertDialogDescription class="alert-desc">
+            {{ confirm?.message }}
+          </AlertDialogDescription>
+          <div class="actions">
+            <AlertDialogCancel class="ghost">Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              :class="confirm?.danger ? 'danger' : 'primary'"
+              @click="runConfirm"
+            >
+              {{ confirm?.actionLabel }}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialogPortal>
+    </AlertDialogRoot>
   </div>
 </template>

@@ -1,5 +1,6 @@
 import { computed } from 'vue'
 import { useIdbRef } from './useIdbRef.js'
+import { dailyOrderNumbers } from '../lib/orders.js'
 import {
   SEED_MENU,
   validateMenu,
@@ -41,6 +42,9 @@ export function createStore() {
       .filter((o) => o.status === 'completed')
       .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)),
   )
+
+  // Per-day sequential order numbers (id -> number), resetting each local day.
+  const orderNumbers = computed(() => dailyOrderNumbers(orders.value))
 
   const now = () => new Date().toISOString()
 
@@ -149,6 +153,7 @@ export function createStore() {
     activeMenu,
     liveOrders,
     completedOrders,
+    orderNumbers,
     ready,
     upsertOrder,
     completeOrder,

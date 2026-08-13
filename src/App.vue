@@ -1,7 +1,7 @@
 <script setup>
-import { ref } from 'vue'
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from 'reka-ui'
 import { useStore } from './composables/useStore.js'
+import { useIdbRef } from './composables/useIdbRef.js'
 import NewOrderView from './views/NewOrderView.vue'
 import OrdersView from './views/OrdersView.vue'
 import HistoryView from './views/HistoryView.vue'
@@ -11,7 +11,8 @@ import MenuView from './views/MenuView.vue'
 import BackupControls from './components/BackupControls.vue'
 
 const store = useStore()
-const tab = ref('orders')
+// Persisted so a reload reopens the last-used tab.
+const { data: tab } = useIdbRef('cafe.ui.tab', 'orders')
 
 const tabs = [
   { value: 'new', label: 'Новый', icon: '＋' },

@@ -54,14 +54,21 @@ describe('App', () => {
     await clickTab(wrapper, 'История')
     expect(wrapper.text()).toContain('Нет завершённых заказов')
 
-    // Complete it, then it appears in history.
+    // Complete it (confirm the dialog), then it appears in history.
     await clickTab(wrapper, 'Заказы')
     await wrapper.get('.order-card .primary').trigger('click') // Готово
+    await flushPromises()
+    // The confirmation dialog is teleported to <body>; confirm it.
+    const confirmBtn = [...document.querySelectorAll('.alert-content .actions button')].find(
+      (b) => b.textContent.includes('Готово'),
+    )
+    confirmBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     await flushPromises()
 
     await clickTab(wrapper, 'История')
     const row = wrapper.get('.hist-row')
-    expect(row.get('.hist-cust').text()).toBe('Борис')
+    expect(row.get('.hist-cust').text()).toContain('Борис')
+    expect(row.get('.order-no').text()).toBe('№1') // daily sequence number
     expect(row.get('.hist-items').text()).toContain('Капучино ×1')
     expect(row.text()).not.toContain('₽') // no prices in history
   })

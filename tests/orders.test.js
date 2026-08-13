@@ -5,6 +5,7 @@ import {
   orderTotal,
   orderCharged,
   createOrder,
+  dailyOrderNumbers,
   addLine,
   setLineQuantity,
   updateLineQuantity,
@@ -96,12 +97,56 @@ describe('createOrder', () => {
     expect(order).toEqual({
       id: 'o1',
       customerName: 'Аня',
+      comment: '',
       createdAt: '2026-08-12T09:00:00.000Z',
       updatedAt: '2026-08-12T09:00:00.000Z',
       status: 'open',
       free: false,
       lineItems: [],
     })
+  })
+
+  it('carries an optional comment', () => {
+    const order = createOrder({ customerName: 'Аня', comment: 'без сахара' })
+    expect(order.comment).toBe('без сахара')
+  })
+})
+
+describe('dailyOrderNumbers', () => {
+  const mk = (id, createdAt) => ({ id, createdAt, status: 'open' })
+
+  it('numbers orders sequentially within a local day by createdAt', () => {
+    const orders = [
+      mk('b', '2026-08-12T10:00:00'),
+      mk('a', '2026-08-12T08:00:00'),
+      mk('c', '2026-08-12T12:00:00'),
+    ]
+    const nums = dailyOrderNumbers(orders)
+    expect(nums.get('a')).toBe(1)
+    expect(nums.get('b')).toBe(2)
+    expect(nums.get('c')).toBe(3)
+  })
+
+  it('resets numbering at the start of each new day', () => {
+    const orders = [
+      mk('d1a', '2026-08-12T08:00:00'),
+      mk('d1b', '2026-08-12T09:00:00'),
+      mk('d2a', '2026-08-13T07:00:00'),
+    ]
+    const nums = dailyOrderNumbers(orders)
+    expect(nums.get('d1a')).toBe(1)
+    expect(nums.get('d1b')).toBe(2)
+    expect(nums.get('d2a')).toBe(1)
+  })
+
+  it('counts all statuses so a number stays fixed as an order changes state', () => {
+    const orders = [
+      { id: 'x', createdAt: '2026-08-12T08:00:00', status: 'cancelled' },
+      { id: 'y', createdAt: '2026-08-12T09:00:00', status: 'completed' },
+    ]
+    const nums = dailyOrderNumbers(orders)
+    expect(nums.get('x')).toBe(1)
+    expect(nums.get('y')).toBe(2)
   })
 })
 

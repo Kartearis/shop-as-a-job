@@ -14,6 +14,7 @@ const props = defineProps({
 const emit = defineEmits(['save', 'cancel'])
 
 const customerName = ref(props.order?.customerName ?? '')
+const comment = ref(props.order?.comment ?? '')
 const free = ref(props.order?.free ?? false)
 const lines = ref(props.order ? [...props.order.lineItems] : [])
 const search = ref('')
@@ -60,6 +61,7 @@ function save() {
   if (!canSave.value) return
   emit('save', {
     customerName: customerName.value.trim(),
+    comment: comment.value.trim(),
     free: free.value,
     lineItems: lines.value,
   })
@@ -71,6 +73,16 @@ function save() {
     <label class="field">
       <span>Имя клиента</span>
       <input v-model="customerName" placeholder="Например, Аня" />
+    </label>
+
+    <label class="field">
+      <span>Комментарий</span>
+      <textarea
+        v-model="comment"
+        class="comment-input"
+        rows="2"
+        placeholder="Например, без сахара, с собой"
+      />
     </label>
 
     <label class="switch-row">
