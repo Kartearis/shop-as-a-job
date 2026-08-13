@@ -60,6 +60,21 @@ describe('createStore', () => {
     expect(store.liveOrders.value.map((o) => o.id)).toEqual(['old'])
   })
 
+  it('exposes completed orders as completedOrders, newest completion first', async () => {
+    const store = createStore()
+    await store.ready
+    // Set state directly with explicit updatedAt so ordering is deterministic.
+    store.orders.value = [
+      { ...openOrder('a'), status: 'completed', updatedAt: '2026-08-12T12:00:00' },
+      { ...openOrder('b'), status: 'completed', updatedAt: '2026-08-12T12:05:00' },
+      { ...openOrder('c'), status: 'open', updatedAt: '2026-08-12T12:10:00' },
+      { ...openOrder('d'), status: 'cancelled', updatedAt: '2026-08-12T12:15:00' },
+    ]
+
+    // Only completed orders, most recently completed first; open/cancelled excluded.
+    expect(store.completedOrders.value.map((o) => o.id)).toEqual(['b', 'a'])
+  })
+
   it('completeOrder and cancelOrder change status', async () => {
     const store = createStore()
     await store.ready

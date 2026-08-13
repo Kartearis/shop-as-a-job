@@ -83,7 +83,7 @@ const hourLabel = (hour) => `${String(hour).padStart(2, '0')}:00`
             :title="`${hourLabel(hour)} — ${count}`"
           />
         </div>
-        <span v-if="hour % 3 === 0" class="hour-label">{{ hourLabel(hour) }}</span>
+        <span class="hour-label">{{ hour % 3 === 0 ? hourLabel(hour) : '' }}</span>
       </div>
     </div>
 

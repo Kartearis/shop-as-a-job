@@ -28,6 +28,12 @@ export function createStore() {
       .filter((o) => o.status === 'open')
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
   )
+  // Finished orders for the history view, most recently completed first.
+  const completedOrders = computed(() =>
+    orders.value
+      .filter((o) => o.status === 'completed')
+      .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)),
+  )
 
   const now = () => new Date().toISOString()
 
@@ -88,6 +94,7 @@ export function createStore() {
     orders,
     activeMenu,
     liveOrders,
+    completedOrders,
     ready,
     upsertOrder,
     completeOrder,

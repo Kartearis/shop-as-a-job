@@ -38,6 +38,34 @@ describe('App', () => {
     expect(wrapper.find('.density').exists()).toBe(true)
   })
 
+  it('lists a completed order in the История tab with items but no prices', async () => {
+    const wrapper = mount(App, { attachTo: document.body })
+    await flushPromises()
+
+    // Create an order.
+    await clickTab(wrapper, 'Новый')
+    await wrapper.get('.order-form input').setValue('Борис')
+    const item = wrapper.findAll('.menu-item').find((b) => b.text().includes('Капучино'))
+    await item.trigger('click')
+    await wrapper.get('.primary').trigger('click')
+    await flushPromises()
+
+    // Not in history yet (still open).
+    await clickTab(wrapper, 'История')
+    expect(wrapper.text()).toContain('Нет завершённых заказов')
+
+    // Complete it, then it appears in history.
+    await clickTab(wrapper, 'Заказы')
+    await wrapper.get('.order-card .primary').trigger('click') // Готово
+    await flushPromises()
+
+    await clickTab(wrapper, 'История')
+    const row = wrapper.get('.hist-row')
+    expect(row.get('.hist-cust').text()).toBe('Борис')
+    expect(row.get('.hist-items').text()).toContain('Капучино ×1')
+    expect(row.text()).not.toContain('₽') // no prices in history
+  })
+
   it('creates an order end-to-end and shows it in the live list', async () => {
     const wrapper = mount(App, { attachTo: document.body })
     await flushPromises()

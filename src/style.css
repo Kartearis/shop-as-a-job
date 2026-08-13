@@ -422,6 +422,35 @@ input:focus {
   gap: 0.4rem;
 }
 
+/* ---------- Order history ---------- */
+.history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.hist-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0.4rem 0.1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.hist-cust {
+  font-weight: 600;
+}
+
+.hist-items {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.hist-combo {
+  font-size: 0.75rem;
+}
+
 /* ---------- Dialog ---------- */
 .dialog-overlay {
   position: fixed;
@@ -571,9 +600,14 @@ input:focus {
 }
 
 .hour-label {
+  /* Reserved on every column (empty when unlabeled) so all bars share one
+     baseline — labels no longer push their own column's bar upward. */
+  height: 0.85rem;
+  margin-top: 3px;
+  line-height: 0.85rem;
   font-size: 0.65rem;
   color: var(--muted);
-  margin-top: 2px;
+  white-space: nowrap;
 }
 
 /* ---------- Backup ---------- */
