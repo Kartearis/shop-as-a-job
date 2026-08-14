@@ -106,6 +106,21 @@ describe('createStore', () => {
     expect(store.orders.value).toHaveLength(0)
   })
 
+  it('clearOrders wipes all orders but leaves the menu intact', async () => {
+    const store = createStore()
+    await store.ready
+    store.upsertOrder(openOrder('o1', [makeLineItem(coffee, 1)]))
+    store.upsertOrder(openOrder('o2'))
+    store.completeOrder('o2')
+    const menuLen = store.menu.value.length
+
+    store.clearOrders()
+    expect(store.orders.value).toHaveLength(0)
+    expect(store.liveOrders.value).toHaveLength(0)
+    expect(store.completedOrders.value).toHaveLength(0)
+    expect(store.menu.value).toHaveLength(menuLen)
+  })
+
   it('exports and re-imports data round-trip', async () => {
     const store = createStore()
     await store.ready

@@ -74,6 +74,11 @@ export function createStore() {
     orders.value = orders.value.filter((o) => o.id !== id)
   }
 
+  /** Wipe all orders — resets history, stock and analytics. Menu is untouched. */
+  function clearOrders() {
+    orders.value = []
+  }
+
   /**
    * Add a new menu item or update an existing one. An item without an id is
    * treated as new and gets a unique id derived from its name. Returns the
@@ -164,6 +169,7 @@ export function createStore() {
     cancelOrder,
     markReady,
     deleteOrder,
+    clearOrders,
     upsertMenuItem,
     deleteMenuItem,
     restoreMenuItem,

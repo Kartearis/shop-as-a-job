@@ -1,4 +1,15 @@
 <script setup>
+import { ref } from 'vue'
+import {
+  AlertDialogRoot,
+  AlertDialogPortal,
+  AlertDialogOverlay,
+  AlertDialogContent,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from 'reka-ui'
 import { describeComponents } from '../lib/menu.js'
 import { elapsedMs, formatElapsed, formatClock, formatDate } from '../lib/time.js'
 
@@ -7,6 +18,13 @@ const props = defineProps({
 })
 
 const numberOf = (id) => props.store.orderNumbers.value.get(id)
+
+// Confirmation before wiping all order data.
+const confirmReset = ref(false)
+function resetHistory() {
+  confirmReset.value = false
+  props.store.clearOrders()
+}
 
 // Combo component names (no quantities/prices) for a compact inline breakdown.
 const partsOf = (components) =>
@@ -53,5 +71,31 @@ const timeSpent = (o) =>
         </span>
       </li>
     </ul>
+
+    <div v-if="store.orders.value.length" class="history-reset">
+      <button class="danger" @click="confirmReset = true">
+        Очистить историю заказов
+      </button>
+    </div>
+
+    <!-- Confirm before wiping all orders (history, stock, analytics) -->
+    <AlertDialogRoot v-model:open="confirmReset">
+      <AlertDialogPortal>
+        <AlertDialogOverlay class="dialog-overlay" />
+        <AlertDialogContent class="alert-content">
+          <AlertDialogTitle class="dialog-title">Очистить историю?</AlertDialogTitle>
+          <AlertDialogDescription class="alert-desc">
+            Все заказы будут удалены безвозвратно, включая активные. История,
+            продажи и аналитика станут пустыми. Меню не затрагивается.
+          </AlertDialogDescription>
+          <div class="actions">
+            <AlertDialogCancel class="ghost">Отмена</AlertDialogCancel>
+            <AlertDialogAction class="danger" @click="resetHistory">
+              Очистить всё
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialogPortal>
+    </AlertDialogRoot>
   </div>
 </template>
