@@ -3,15 +3,19 @@
 // order-level fields repeated; prices are rendered in rubles (2 decimals).
 
 import { kopecksToRubles } from './money.js'
-import { orderTotal, orderCharged, lineTotal } from './orders.js'
+import { orderTotal, orderCharged, lineTotal, dailyOrderNumbers } from './orders.js'
 import { describeComponents } from './menu.js'
 
 const HEADERS = [
   'ID заказа',
+  'Номер',
   'Дата',
   'Статус',
   'Клиент',
   'Бесплатно',
+  'Доставка',
+  'Адрес',
+  'Комментарий',
   'ID позиции',
   'Позиция',
   'Тип',
@@ -25,6 +29,7 @@ const HEADERS = [
 
 const STATUS_RU = {
   open: 'Открыт',
+  ready: 'Готов к доставке',
   completed: 'Завершён',
   cancelled: 'Отменён',
 }
@@ -55,6 +60,7 @@ function comboText(line, menu) {
  */
 export function ordersToCsv(orders, menu = []) {
   const rows = [HEADERS]
+  const numbers = dailyOrderNumbers(orders)
   const sorted = [...orders].sort(
     (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
   )
@@ -62,12 +68,18 @@ export function ordersToCsv(orders, menu = []) {
   for (const o of sorted) {
     const total = rub(orderTotal(o))
     const charged = rub(orderCharged(o))
+    // Order-level fields, repeated on every line row. Fields added in later
+    // versions (delivery/address/comment) fall back to empty for older data.
     const base = [
       o.id,
+      numbers.get(o.id) ?? '',
       o.createdAt,
       STATUS_RU[o.status] ?? o.status ?? '',
       o.customerName,
       o.free ? 'да' : 'нет',
+      o.delivery ? 'да' : 'нет',
+      o.address ?? '',
+      o.comment ?? '',
     ]
 
     if (!o.lineItems?.length) {

@@ -26,7 +26,7 @@ describe('ordersToCsv', () => {
   it('starts with a header row', () => {
     const csv = ordersToCsv([], menu)
     expect(lines(csv)[0]).toBe(
-      'ID заказа,Дата,Статус,Клиент,Бесплатно,ID позиции,Позиция,Тип,Состав,Цена (₽),Кол-во,Сумма позиции (₽),Итого заказ (₽),К оплате (₽)',
+      'ID заказа,Номер,Дата,Статус,Клиент,Бесплатно,Доставка,Адрес,Комментарий,ID позиции,Позиция,Тип,Состав,Цена (₽),Кол-во,Сумма позиции (₽),Итого заказ (₽),К оплате (₽)',
     )
     expect(lines(csv)).toHaveLength(1) // header only when no orders
   })
@@ -39,9 +39,50 @@ describe('ordersToCsv', () => {
     })
     const rows = lines(ordersToCsv([o], menu))
     expect(rows).toHaveLength(3) // header + 2 items
-    expect(rows[1]).toContain('o1,2026-08-12T09:00:00,Завершён,Аня,нет,coffee,Капучино,dish,')
+    // id, daily number, date, status, customer, free, delivery, address, comment, then item cols
+    expect(rows[1]).toContain('o1,1,2026-08-12T09:00:00,Завершён,Аня,нет,нет,,,coffee,Капучино,dish,')
     // price/qty/line-total for the coffee row: 200.00, 2, 400.00
     expect(rows[1]).toContain('200.00,2,400.00')
+  })
+
+  it('includes delivery, address, comment and localises the ready status', () => {
+    const o = order([makeLineItem(coffee, 1)], {
+      id: 'd1',
+      customerName: 'Глеб',
+      status: 'ready',
+      delivery: true,
+      address: 'Ленина 1',
+      comment: 'без сахара',
+    })
+    const row = lines(ordersToCsv([o], menu))[1]
+    expect(row).toContain('d1,1,2026-08-12T09:00:00,Готов к доставке,Глеб,нет,да,Ленина 1,без сахара,coffee,')
+  })
+
+  it('numbers orders per day (resetting each day)', () => {
+    const a = order([makeLineItem(coffee, 1)], { id: 'a', createdAt: '2026-08-12T08:00:00', status: 'completed' })
+    const b = order([makeLineItem(coffee, 1)], { id: 'b', createdAt: '2026-08-12T09:00:00', status: 'completed' })
+    const c = order([makeLineItem(coffee, 1)], { id: 'c', createdAt: '2026-08-13T08:00:00', status: 'completed' })
+    const rows = lines(ordersToCsv([a, b, c], menu))
+    expect(rows[1].startsWith('a,1,')).toBe(true)
+    expect(rows[2].startsWith('b,2,')).toBe(true)
+    expect(rows[3].startsWith('c,1,')).toBe(true) // new day → resets
+  })
+
+  it('exports pre-update orders (no delivery/address/comment fields) safely', () => {
+    // Shape persisted before delivery/comment existed.
+    const legacy = {
+      id: 'old',
+      createdAt: '2026-08-12T09:00:00',
+      updatedAt: '2026-08-12T09:00:00',
+      status: 'completed',
+      customerName: 'Старый',
+      free: false,
+      lineItems: [makeLineItem(coffee, 1)],
+    }
+    const row = lines(ordersToCsv([legacy], menu))[1]
+    // delivery defaults to "нет", address/comment blank — no undefined leaks
+    expect(row).toContain('old,1,2026-08-12T09:00:00,Завершён,Старый,нет,нет,,,coffee,')
+    expect(row).not.toContain('undefined')
   })
 
   it('renders a combo breakdown in the Состав column', () => {
@@ -86,8 +127,8 @@ describe('ordersToCsv', () => {
     const empty = order([], { id: 'e', customerName: 'X', status: 'cancelled' })
     const rows = lines(ordersToCsv([empty], menu))
     expect(rows).toHaveLength(2)
-    expect(rows[1].split(',')).toHaveLength(14) // all 14 columns present
-    expect(rows[1].startsWith('e,2026-08-12T09:00:00,Отменён,X,нет,')).toBe(true)
+    expect(rows[1].split(',')).toHaveLength(18) // all 18 columns present
+    expect(rows[1].startsWith('e,1,2026-08-12T09:00:00,Отменён,X,нет,нет,,,')).toBe(true)
     expect(rows[1].endsWith(',0.00,0.00')).toBe(true)
   })
 })
